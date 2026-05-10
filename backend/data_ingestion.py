@@ -233,4 +233,42 @@ async def collect_match_data(
     home_raw     = snippets(home_serper)
     away_raw     = snippets(away_serper)
     h2h_raw      = snippets(h2h_serper)
-    inj_home_raw = snippets(inj_home_ser
+    inj_home_raw = snippets(inj_home_serper)
+    inj_away_raw = snippets(inj_away_serper)
+    matchup_raw  = snippets(matchup_serper)
+
+    # ── 3. Extraction Gemini ──────────────────────────────────
+    home_stats_dict = gemini_extract_stats(home_raw, team_home)
+    away_stats_dict = gemini_extract_stats(away_raw, team_away)
+    injuries_home   = gemini_extract_injuries(inj_home_raw, team_home)
+    injuries_away   = gemini_extract_injuries(inj_away_raw, team_away)
+    h2h_summary     = gemini_h2h_summary(h2h_serper, team_home, team_away)
+    key_factor      = gemini_key_factor(
+        team_home, team_away,
+        home_stats_dict, away_stats_dict,
+        h2h_raw, matchup_raw, league,
+    )
+
+    # ── 4. Construction objets ────────────────────────────────
+    home_stats    = TeamStats(team_name=team_home, **home_stats_dict)
+    away_stats    = TeamStats(team_name=team_away, **away_stats_dict)
+    inj_home_list = [InjuryReport(**i) for i in injuries_home]
+    inj_away_list = [InjuryReport(**i) for i in injuries_away]
+
+    # ── 5. Ajustement Net Rating blessures ────────────────────
+    home_stats.net_rating += sum(i.impact_pts for i in inj_home_list)
+    away_stats.net_rating += sum(i.impact_pts for i in inj_away_list)
+
+    return {
+        "home_stats":    home_stats,
+        "away_stats":    away_stats,
+        "injuries_home": inj_home_list,
+        "injuries_away": inj_away_list,
+        "h2h_summary":   h2h_summary,
+        "key_factor":    key_factor,
+        "data_sources":  [
+            "Serper.dev",
+            "Jina AI Reader",
+            "Google Gemini 3 Flash",
+        ],
+            }
