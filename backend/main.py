@@ -58,4 +58,69 @@ async def predict(req: MatchRequest):
             match_date = req.match_date,
         )
 
-        # ──
+        # ── 2. Moteur analytique ──────────────────────────────
+        engine = run_analytics(
+            home = data["home_stats"],
+            away = data["away_stats"],
+        )
+
+        # ── 3. Monte Carlo ────────────────────────────────────
+        simulation = run_full_simulation(
+            engine    = engine,
+            team_home = req.team_home,
+            team_away = req.team_away,
+        )
+
+        # ── 4. Réponse complète ───────────────────────────────
+        return PredictionResponse(
+            team_home    = req.team_home,
+            team_away    = req.team_away,
+            league       = req.league or "NBA",
+            match_date   = req.match_date,
+
+            home_stats   = data["home_stats"],
+            away_stats   = data["away_stats"],
+            injuries_home = data["injuries_home"],
+            injuries_away = data["injuries_away"],
+            key_factor   = data["key_factor"],
+            h2h_summary  = data["h2h_summary"],
+
+            monte_carlo  = simulation["monte_carlo"],
+            four_factors = engine.four_factors,
+            scenarios    = simulation["scenarios"],
+
+            bet_recommendations = simulation["bets"],
+            confidence_global   = engine.confidence,
+            data_sources        = data["data_sources"],
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code = 500,
+            detail      = f"Erreur prédiction : {str(e)}",
+        )
+
+
+@app.get("/leagues")
+def get_leagues():
+    """Retourne les ligues supportées."""
+    from config import SUPPORTED_LEAGUES
+    return {"leagues": SUPPORTED_LEAGUES}
+
+
+@app.get("/example")
+def get_example():
+    """Exemple de requête pour tester l'API."""
+    return {
+        "example_request": {
+            "team_home":  "Los Angeles Lakers",
+            "team_away":  "Boston Celtics",
+            "league":     "NBA",
+            "match_date": "2025-05-15",
+        },
+        "curl": (
+            'curl -X POST "http://localhost:8000/predict" '
+            '-H "Content-Type: application/json" '
+            '-d \'{"team_home":"Lakers","team_away":"Celtics","league":"NBA"}\''
+        ),
+        }
