@@ -2,6 +2,8 @@
 # app.py — Interface Streamlit Dark Mode
 # ============================================================
 import streamlit as st
+import sys
+# Compatibilité Python 3.14
 import httpx
 import asyncio
 import plotly.graph_objects as go
