@@ -18,9 +18,13 @@ st.set_page_config(
 )
 
 # ── URL API ───────────────────────────────────────────────────
-import osAPI_URL = st.secrets.get("API_URL", os.getenv(
+import os
+API_URL = st.secrets.get(
     "API_URL",
-    "https://basketpredict-api-production.up.railway.app"
+    os.getenv(
+        "API_URL",
+        "https://basketpredict-api-production.up.railway.app"
+    )
 )
 
 # ── CSS Dark Mode Premium ─────────────────────────────────────
